@@ -1,0 +1,13 @@
+version: '3.5'
+
+services:
+  app:
+    build: .
+    container_name: todo_app_app
+    command: sh -c "rm -f tmp/pids/server.pid && bin/dev"
+    tty: true
+    volumes:
+      - .:/usr/src
+    stdin_open: true
+    ports:
+      - "4567:4567"

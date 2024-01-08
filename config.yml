@@ -1,0 +1,6 @@
+google:
+  calendar_id: 'primary'
+  attendee:
+    - 'zlysanskiy@gmail.com'
+notion:
+  database_id: 'f2ff5cd5d2584ff6a9b9a289c724aa6a'
