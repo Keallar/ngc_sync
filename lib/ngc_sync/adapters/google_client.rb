@@ -4,7 +4,7 @@ module NgcSync
   module Adapters
     # Adapter for google-api-client
     class GoogleClient
-      # include Dry::Monads[:result]
+      include Dry::Monads[:result]
 
       Calendar = Google::Apis::CalendarV3 # Alias the module
       OOB_URI = 'urn:ietf:wg:oauth:2.0:oob'
@@ -16,20 +16,35 @@ module NgcSync
         @service = init_client
       end
 
+      def list_events(options = {})
+        resp = service.list_events(config['calendar_id'], **options)
+        resp.items
+      end
+
       def insert_event(options)
         event = build_event(options)
         resp = service.insert_event(config['calendar_id'], event, send_notifications: true)
         NgcSync.logger.info "Created event '#{resp.summary}' (#{resp.id}) #{resp.html_link}"
+        Success(resp)
       rescue Google::Apis::ClientError, Google::Apis::ServerError => e
         NgcSync.logger.error 'Error while inserting event...'
         NgcSync.logger.error e.message
         NgcSync.logger.error e.backtrace&.join("\n")
+        Failure(e.message)
+      end
+
+      def delete_event(options)
+        service.delete_event(config['calendar_id'], options['id'])
+      rescue Google::Apis::ClientError, Google::Apis::ServerError => e
+        NgcSync.logger.error 'Error while deleting event...'
+        NgcSync.logger.error e.message
+        NgcSync.logger.error e.backtrace&.join("\n")
+        Failure(e.message)
       end
 
       private
 
       def build_event(options)
-        puts "options: #{options}"
         event_hash = {
           summary: options['summary'],
           attendees: config['attendee'].map { |at| Calendar::EventAttendee.new(email: at) },
@@ -42,7 +57,6 @@ module NgcSync
             date_time: DateTime.parse(options['end'])
           )
         end
-        puts "event_hash: #{event_hash}"
         Calendar::Event.new(**event_hash)
       end
 
@@ -77,7 +91,6 @@ module NgcSync
       end
 
       def token_store
-        # Google::Auth::Stores::RedisTokenStore.new(redis: Redis.new)
         Google::Auth::Stores::FileTokenStore.new(file: 'credentials.json')
       end
     end

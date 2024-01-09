@@ -1,13 +1,9 @@
 version: '3.5'
 
 services:
-  app:
-    build: .
-    container_name: todo_app_app
-    command: sh -c "rm -f tmp/pids/server.pid && bin/dev"
-    tty: true
-    volumes:
-      - .:/usr/src
-    stdin_open: true
+  redis:
+    image: redis:latest
+    restart: always
+    container_name: ngc_sync-redis
     ports:
-      - "4567:4567"
+      - '6379:6379'
