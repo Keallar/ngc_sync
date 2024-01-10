@@ -1,9 +1,12 @@
 version: '3.5'
 
 services:
-  redis:
-    image: redis:latest
-    restart: always
-    container_name: ngc_sync-redis
-    ports:
-      - '6379:6379'
+  cron:
+    container_name: ngc_sync_cron
+    build: .
+    command: sh ./bin/start-cron.sh
+    volumes:
+      - .:/ngc_sync
+
+volumes:
+  ngc_sync:

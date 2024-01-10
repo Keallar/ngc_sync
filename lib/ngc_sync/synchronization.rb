@@ -12,23 +12,35 @@ module NgcSync
     def initialize
       @notion = NgcSync::Adapters::NotionClient.new
       @google = NgcSync::Adapters::GoogleClient.new
-      @redis = Redis.new
     end
 
     def perform
+      delete_old_events
+      create_new_events
+    end
+
+    private
+
+    def delete_old_events
       notion_dates = notion.db_calendar_dates_with_title
-      current_events = google.list_events
-      r_keys = redis.keys('*')
-      r_keys.each do |key|
-        event_id = redis.get(key)
-        google.delete_event({ 'id' => event_id }) unless current_events.map(&:summary).include?(key) &&
-                                                         notion_dates.map { |date| date['summary'] }.include?(key)
+      current_events = google.list_ngc_events
+      current_events.each do |ev|
+        next if notion_dates.any? { |date| date['summary'] == ev.summary }
+
+        options = {
+          'id' => ev.id
+        }
+        google.delete_event(options)
       end
+    end
+
+    def create_new_events
+      notion_dates = notion.db_calendar_dates_with_title
+      current_events = google.list_ngc_events
       notion_dates.each do |date|
         next if current_events.any? { |ev| ev.summary == date['summary'] }
 
-        event = google.insert_event(date)
-        redis.set(event.value!.summary, event.value!.id, ex: 62.minutes)
+        google.insert_event(date)
       end
     end
   end

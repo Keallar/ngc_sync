@@ -4,8 +4,6 @@ module NgcSync
   module Adapters
     # Adapter for google-api-client
     class GoogleClient
-      include Dry::Monads[:result]
-
       Calendar = Google::Apis::CalendarV3 # Alias the module
       OOB_URI = 'urn:ietf:wg:oauth:2.0:oob'
 
@@ -16,21 +14,22 @@ module NgcSync
         @service = init_client
       end
 
+      def list_ngc_events(options = {})
+        @list_ngc_events ||= list_events(options).select { |ev| ev&.description&.include?(EVENT_MARK) }
+      end
+
       def list_events(options = {})
-        resp = service.list_events(config['calendar_id'], **options)
-        resp.items
+        @list_events ||= service.list_events(config['calendar_id'], **options).items
       end
 
       def insert_event(options)
         event = build_event(options)
         resp = service.insert_event(config['calendar_id'], event, send_notifications: true)
         NgcSync.logger.info "Created event '#{resp.summary}' (#{resp.id}) #{resp.html_link}"
-        Success(resp)
       rescue Google::Apis::ClientError, Google::Apis::ServerError => e
         NgcSync.logger.error 'Error while inserting event...'
         NgcSync.logger.error e.message
         NgcSync.logger.error e.backtrace&.join("\n")
-        Failure(e.message)
       end
 
       def delete_event(options)
@@ -39,7 +38,6 @@ module NgcSync
         NgcSync.logger.error 'Error while deleting event...'
         NgcSync.logger.error e.message
         NgcSync.logger.error e.backtrace&.join("\n")
-        Failure(e.message)
       end
 
       private
@@ -48,6 +46,7 @@ module NgcSync
         event_hash = {
           summary: options['summary'],
           attendees: config['attendee'].map { |at| Calendar::EventAttendee.new(email: at) },
+          description: EVENT_MARK,
           start: Calendar::EventDateTime.new(
             date_time: DateTime.parse(options['start'])
           )

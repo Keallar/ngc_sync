@@ -8,6 +8,7 @@ module NgcSync
   GOOGLE_CLIENT_ID = ENV['GOOGLE_CLIENT_ID']
   GOOGLE_CLIENT_SECRET = ENV['GOOGLE_CLIENT_SECRET']
   GOOGLE_USER_ID = ENV['GOOGLE_USER_ID']
+  EVENT_MARK = ENV['EVENT_MARK']
   CONFIG = YAML.load_file('config.yml')
 
   def self.logger

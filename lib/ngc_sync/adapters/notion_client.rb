@@ -12,7 +12,7 @@ module NgcSync
       end
 
       def db_calendar_dates_with_title
-        db_calendar_objects.map do |obj|
+        @db_calendar_dates_with_title ||= db_calendar_objects.map do |obj|
           title = db_calendar_title(obj)
           date = db_calendar_date(obj)
           { 'summary' => title }.merge(date)
@@ -30,7 +30,7 @@ module NgcSync
       end
 
       private
-      
+
       def db_calendar_title(obj)
         obj.dig('properties', 'Name', 'title').first.dig('text', 'content')
       end

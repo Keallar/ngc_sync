@@ -2,14 +2,11 @@
 
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 
-require 'active_support/all'
 require 'dotenv/load'
-require 'dry/monads'
 require 'googleauth'
 require 'googleauth/stores/file_token_store'
 require 'google/apis/calendar_v3'
 require 'notion-ruby-client'
-require 'redis'
 require 'yaml'
 require 'logger'
 require 'ngc_sync/config'
