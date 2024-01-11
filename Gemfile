@@ -8,4 +8,4 @@ gem 'notion-ruby-client'
 gem 'rake'
 gem 'rspec'
 gem 'rubocop'
-gem 'whenever'
+gem 'whenever', require: false

@@ -1,5 +1,18 @@
 # frozen_string_literal: true
 
-every 1.hour do
-  runner 'NgcSync::Synchronization.perform', output: 'log/cron_log.log'
+require_relative '../lib/ngc_sync'
+
+ENV.each { |k, v| env(k, v) }
+
+set :path, ENV['PWD']
+
+job_type(:rake,
+         'cd :path && ('\
+           "echo \"$(date '+%Y-%m-%d %H:%M:%S') <:tag> started\" && "\
+           'bundle exec rake :task && '\
+           "echo \"$(date '+%Y-%m-%d %H:%M:%S') <:tag> finished\""\
+           ') :output')
+
+every '* */1 * * *' do
+  rake 'ngc_sync:run', output: 'log/cron.log', tag: 'NgcSync::Synchronization run'
 end

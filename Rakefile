@@ -9,3 +9,10 @@ task :console do
   ARGV.clear
   IRB.start
 end
+
+namespace :ngc_sync do
+  desc 'Run synchronization'
+  task :run do
+    NgcSync::Synchronization.perform
+  end
+end
