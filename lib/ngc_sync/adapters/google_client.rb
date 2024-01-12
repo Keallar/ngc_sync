@@ -14,6 +14,7 @@ module NgcSync
         @service = init_client
       end
 
+      # List of google calendar events filtered by Ngc mark in description
       def list_ngc_events(options = {})
         @list_ngc_events ||= list_events(options).select { |ev| ev&.description&.include?(EVENT_MARK) }
       end
@@ -27,7 +28,7 @@ module NgcSync
         resp = service.insert_event(config['calendar_id'], event, send_notifications: true)
         NgcSync.logger.info "Created event '#{resp.summary}' (#{resp.id}) #{resp.html_link}"
       rescue Google::Apis::ClientError, Google::Apis::ServerError => e
-        NgcSync.logger.error 'Error while inserting event...'
+        NgcSync.logger.error "Error while inserting event #{event.inspect} with options: #{options}"
         NgcSync.logger.error e.message
         NgcSync.logger.error e.backtrace&.join("\n")
       end
@@ -35,7 +36,7 @@ module NgcSync
       def delete_event(options)
         service.delete_event(config['calendar_id'], options['id'])
       rescue Google::Apis::ClientError, Google::Apis::ServerError => e
-        NgcSync.logger.error 'Error while deleting event...'
+        NgcSync.logger.error "Error while deleting event with id #{options['id']}"
         NgcSync.logger.error e.message
         NgcSync.logger.error e.backtrace&.join("\n")
       end
@@ -43,19 +44,18 @@ module NgcSync
       private
 
       def build_event(options)
+        start = DateTime.parse(options['start'])
         event_hash = {
           summary: options['summary'],
           attendees: config['attendee'].map { |at| Calendar::EventAttendee.new(email: at) },
           description: EVENT_MARK,
           start: Calendar::EventDateTime.new(
             date_time: DateTime.parse(options['start'])
+          ),
+          end: Calendar::EventDateTime.new(
+            date_time: options['end'].nil? ? start + (1.0 / 24.0) : DateTime.parse(options['end'])
           )
         }
-        unless options['end'].nil?
-          event_hash[:end] = Calendar::EventDateTime.new(
-            date_time: DateTime.parse(options['end'])
-          )
-        end
         Calendar::Event.new(**event_hash)
       end
 

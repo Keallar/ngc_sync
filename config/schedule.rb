@@ -13,6 +13,6 @@ job_type(:rake,
            "echo \"$(date '+%Y-%m-%d %H:%M:%S') <:tag> finished\""\
            ') :output')
 
-every '* */1 * * *' do
+every :hour do
   rake 'ngc_sync:run', output: 'log/cron.log', tag: 'NgcSync::Synchronization run'
 end
