@@ -15,6 +15,8 @@ module NgcSync
     end
 
     def perform
+      @notion_dates = notion.db_calendar_dates_with_title
+      @current_events = google.list_ngc_events
       delete_old_events
       create_new_events
     end
@@ -22,10 +24,8 @@ module NgcSync
     private
 
     def delete_old_events
-      notion_dates = notion.db_calendar_dates_with_title
-      current_events = google.list_ngc_events
-      current_events.each do |ev|
-        next if notion_dates.any? { |date| date['summary'] == ev.summary }
+      @current_events.each do |ev|
+        next if @notion_dates.any? { |date| date['summary'] == ev.summary }
 
         options = {
           'id' => ev.id
@@ -35,10 +35,9 @@ module NgcSync
     end
 
     def create_new_events
-      notion_dates = notion.db_calendar_dates_with_title
-      current_events = google.list_ngc_events
-      notion_dates.each do |date|
-        next if current_events.any? { |ev| ev.summary == date['summary'] }
+      @notion_dates.each do |date|
+        ev = @current_events.find { |e| e.summary == date['summary'] }
+        next google.update_event(date.merge('id' => ev.id)) if ev
 
         google.insert_event(date)
       end

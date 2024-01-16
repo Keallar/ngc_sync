@@ -6,7 +6,6 @@ RUN apt-get -y install cron
 ENV APP_APTH=/ngc_sync
 WORKDIR $APP_APTH
 
-COPY Gemfile* .
-COPY . $APP_PATH
+COPY ./ $APP_PATH
 
 RUN bundle install

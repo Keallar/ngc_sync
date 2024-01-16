@@ -2,5 +2,7 @@ google:
   calendar_id: 'primary'
   attendee:
     - 'zlysanskiy@gmail.com'
+  file_store: 'credentials.json'
+  oob_uri: 'urn:ietf:wg:oauth:2.0:oob'
 notion:
   database_id: 'f2ff5cd5d2584ff6a9b9a289c724aa6a'
