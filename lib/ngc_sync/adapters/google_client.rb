@@ -16,13 +16,19 @@ module NgcSync
 
       # List of google calendar events filtered by Ngc (app) mark in description field
       def list_ngc_events(options = {})
-        @list_ngc_events ||= list_events(options).select { |ev| ev&.description&.include?(EVENT_MARK) }
+        run_with_handle_ex do
+          @list_ngc_events ||= list_events(options).select { |ev| ev&.description&.include?(EVENT_MARK) }
+        end
       end
 
+      # List of google calendar events
       def list_events(options = {})
-        @list_events ||= service.list_events(@calendar_id, **options).items
+        run_with_handle_ex do
+          @list_events ||= service.list_events(@calendar_id, **options).items
+        end
       end
 
+      # Insert event in google calendar
       def insert_event(options)
         event = build_event(options)
         resp = service.insert_event(@calendar_id, event, send_notifications: true)
@@ -33,6 +39,7 @@ module NgcSync
         NgcSync.logger.error e.backtrace&.join("\n")
       end
 
+      # Update event of google calendar
       def update_event(options)
         event = build_event(options)
         event_id = options['id']
@@ -44,6 +51,7 @@ module NgcSync
         NgcSync.logger.error e.backtrace&.join("\n")
       end
 
+      # Delete event of google calendar
       def delete_event(options)
         service.delete_event(@calendar_id, options['id'])
       rescue Google::Apis::ClientError, Google::Apis::ServerError => e
@@ -84,13 +92,10 @@ module NgcSync
       def creds
         result = authorizer.get_credentials('default')
         if result.nil?
-          url = authorizer.get_authorization_url(base_url: config['oob_uri'])
-          begin
+          run_with_handle_ex do
             result = authorizer.get_and_store_credentials_from_code(user_id: 'default',
                                                                     code: GOOGLE_USER_ID,
                                                                     base_url: config['oob_uri'])
-          rescue Signet::AuthorizationError
-            NgcSync.logger.error "Update creds on #{url}!!!"
           end
         end
         result
@@ -106,6 +111,14 @@ module NgcSync
 
       def token_store
         Google::Auth::Stores::FileTokenStore.new(file: 'credentials.json')
+      end
+
+      def run_with_handle_ex
+        yield if block_given?
+      rescue Signet::AuthorizationError => e
+        url = authorizer.get_authorization_url(base_url: config['oob_uri'])
+        NgcSync.logger.error "Update creds on #{url}!!!"
+        raise e
       end
     end
   end
