@@ -3,7 +3,7 @@
 module NgcSync
   # Sync
   class Synchronization
-    attr_reader :google, :notion, :redis
+    attr_reader :google, :notion
 
     def self.perform
       new.perform
@@ -19,6 +19,9 @@ module NgcSync
       @current_events = google.list_ngc_events
       delete_old_events
       create_new_events
+    rescue Signet::AuthorizationError
+      url = authorizer.get_authorization_url(base_url: config['oob_uri'])
+      NgcSync.logger.error "Update creds on #{url}!!!"
     end
 
     private

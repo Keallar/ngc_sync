@@ -16,16 +16,12 @@ module NgcSync
 
       # List of google calendar events filtered by Ngc (app) mark in description field
       def list_ngc_events(options = {})
-        run_with_handle_ex do
-          @list_ngc_events ||= list_events(options).select { |ev| ev&.description&.include?(EVENT_MARK) }
-        end
+        @list_ngc_events ||= list_events(options).select { |ev| ev&.description&.include?(EVENT_MARK) }
       end
 
       # List of google calendar events
       def list_events(options = {})
-        run_with_handle_ex do
-          @list_events ||= service.list_events(@calendar_id, **options).items
-        end
+        @list_events ||= service.list_events(@calendar_id, **options).items
       end
 
       # Insert event in google calendar
@@ -92,11 +88,9 @@ module NgcSync
       def creds
         result = authorizer.get_credentials('default')
         if result.nil?
-          run_with_handle_ex do
-            result = authorizer.get_and_store_credentials_from_code(user_id: 'default',
-                                                                    code: GOOGLE_USER_ID,
-                                                                    base_url: config['oob_uri'])
-          end
+          result = authorizer.get_and_store_credentials_from_code(user_id: 'default',
+                                                                  code: GOOGLE_USER_ID,
+                                                                  base_url: config['oob_uri'])
         end
         result
       end
@@ -111,14 +105,6 @@ module NgcSync
 
       def token_store
         Google::Auth::Stores::FileTokenStore.new(file: 'credentials.json')
-      end
-
-      def run_with_handle_ex
-        yield if block_given?
-      rescue Signet::AuthorizationError => e
-        url = authorizer.get_authorization_url(base_url: config['oob_uri'])
-        NgcSync.logger.error "Update creds on #{url}!!!"
-        raise e
       end
     end
   end
